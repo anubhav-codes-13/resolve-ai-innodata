@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import AdminLayout from "@/components/dashboard/AdminLayout";
 import { CLUSTER_DATA, CHANNEL_TRENDS, CHANNEL_STATS, AI_INSIGHTS } from "@/lib/mockData";
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
 } from "recharts";
 import {
     Activity, Users, Zap, Clock,
@@ -15,6 +15,14 @@ import { motion } from "framer-motion";
 
 type DateRange = "24h" | "7d" | "30d";
 type Channel = "All" | "Chat" | "Call" | "Email";
+type HoverInfo = {
+    x: number;
+    containerWidth: number;
+    time: string;
+    resolution: number;
+    volume: number;
+    escalation: number;
+} | null;
 
 const CLUSTER_META: Record<string, { change: string; up: boolean; spark: number[] }> = {
     "Payment Failed":    { change: "+19%", up: true,  spark: [38, 42, 40, 45, 50, 55, 58, 62] },
@@ -33,6 +41,34 @@ export default function AdminDashboard() {
     const [dateRange, setDateRange] = useState<DateRange>("7d");
     const [channel, setChannel] = useState<Channel>("All");
     const [followUpText, setFollowUpText] = useState("");
+    const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
+    const chartRef = useRef<HTMLDivElement>(null);
+
+    function handleChartMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+        if (!chartRef.current || !trendData.length) return;
+        const rect = chartRef.current.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        // Plot area boundaries: left YAxis width=38, margin.left=-10 → plotLeft≈28
+        // right YAxis width=30, margin.right=44 → plotRight≈width-74
+        const plotLeft = 28;
+        const plotRight = rect.width - 74;
+        if (mouseX < plotLeft || mouseX > plotRight) { setHoverInfo(null); return; }
+        const n = trendData.length;
+        const floatIdx = ((mouseX - plotLeft) / (plotRight - plotLeft)) * (n - 1);
+        const lo = Math.max(0, Math.floor(floatIdx));
+        const hi = Math.min(n - 1, Math.ceil(floatIdx));
+        const t = floatIdx - lo;
+        const tc = (1 - Math.cos(t * Math.PI)) / 2;
+        const a = trendData[lo], b = trendData[hi];
+        setHoverInfo({
+            x: mouseX,
+            containerWidth: rect.width,
+            time: tc < 0.5 ? String(a.time) : String(b.time),
+            resolution: Number(a.resolution) + (Number(b.resolution) - Number(a.resolution)) * tc,
+            volume:     Number(a.volume)     + (Number(b.volume)     - Number(a.volume))     * tc,
+            escalation: Number(a.escalation) + (Number(b.escalation) - Number(a.escalation)) * tc,
+        });
+    }
 
     const trendData = CHANNEL_TRENDS[dateRange][channel];
     const stats = CHANNEL_STATS[channel];
@@ -132,27 +168,62 @@ export default function AdminDashboard() {
                                 <span className="flex items-center gap-1.5 text-amber-500"><span className="w-3 h-0.5 rounded bg-amber-500 inline-block" />Escalation</span>
                             </div>
                         </div>
-                        <div className="flex-1 min-h-0 w-full overflow-hidden">
+                        <div
+                            ref={chartRef}
+                            className="flex-1 min-h-0 w-full overflow-hidden relative"
+                            onMouseMove={handleChartMouseMove}
+                            onMouseLeave={() => setHoverInfo(null)}
+                        >
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={trendData} margin={{ top: 4, right: 44, bottom: 0, left: -10 }}>
                                     <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
                                     <XAxis dataKey="time" tick={{ fill: "#52525b", fontSize: 9 }} height={18} tickLine={false} />
                                     <YAxis yAxisId="vol" orientation="left" tick={{ fill: "#52525b", fontSize: 9 }} width={38} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
                                     <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tick={{ fill: "#52525b", fontSize: 9 }} width={30} tickFormatter={(v) => `${v}%`} />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", fontSize: "11px", color: "#fff" }}
-                                        formatter={(value, name) => {
-                                            if (value == null) return ["—", name as string];
-                                            return name === "Volume"
-                                                ? [Number(value).toLocaleString(), name as string]
-                                                : [`${value}%`, name as string];
-                                        }}
-                                    />
-                                    <Line yAxisId="pct" type="monotone" dataKey="resolution" stroke="#3b82f6" strokeWidth={2} dot={false} name="Resolution %" />
-                                    <Line yAxisId="vol" type="monotone" dataKey="volume"     stroke="#10b981" strokeWidth={1.5} dot={false} strokeDasharray="5 4" name="Volume" />
-                                    <Line yAxisId="pct" type="monotone" dataKey="escalation" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="3 3" name="Escalation %" />
+                                    <Line yAxisId="pct" type="monotone" dataKey="resolution" stroke="#3b82f6" strokeWidth={2}   dot={false} />
+                                    <Line yAxisId="vol" type="monotone" dataKey="volume"     stroke="#10b981" strokeWidth={1.5} dot={false} strokeDasharray="5 4" />
+                                    <Line yAxisId="pct" type="monotone" dataKey="escalation" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="3 3" />
                                 </LineChart>
                             </ResponsiveContainer>
+
+                            {/* Continuous hover overlay */}
+                            {hoverInfo && (
+                                <div className="pointer-events-none absolute inset-0" style={{ zIndex: 10 }}>
+                                    {/* Vertical cursor line */}
+                                    <div
+                                        className="absolute top-[4px] bottom-[18px] w-px bg-white/20"
+                                        style={{ left: hoverInfo.x }}
+                                    />
+                                    {/* Floating tooltip card */}
+                                    <div
+                                        className="absolute top-2 bg-[rgba(9,9,11,0.95)] border border-white/10 rounded-xl px-3 py-2.5 shadow-2xl backdrop-blur-xl min-w-[130px]"
+                                        style={{
+                                            left: hoverInfo.x > hoverInfo.containerWidth / 2
+                                                ? hoverInfo.x - 146
+                                                : hoverInfo.x + 12,
+                                        }}
+                                    >
+                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">{hoverInfo.time}</p>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                                                <span className="text-[11px] text-zinc-400 flex-1">Resolution</span>
+                                                <span className="text-[11px] text-white font-bold tabular-nums">{hoverInfo.resolution.toFixed(1)}%</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                                <span className="text-[11px] text-zinc-400 flex-1">Volume</span>
+                                                <span className="text-[11px] text-white font-bold tabular-nums">{Math.round(hoverInfo.volume).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                                                <span className="text-[11px] text-zinc-400 flex-1">Escalation</span>
+                                                <span className="text-[11px] text-white font-bold tabular-nums">{hoverInfo.escalation.toFixed(1)}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
 
