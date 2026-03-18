@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import {
     Activity, Users, Zap, Clock,
-    Sparkles, MessageSquare, Send,
+    Sparkles, MessageSquare, Send, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -64,6 +64,7 @@ export default function AdminDashboard() {
     const [dateRange, setDateRange] = useState<DateRange>("7d");
     const [channel, setChannel] = useState<Channel>("All");
     const [followUpText, setFollowUpText] = useState("");
+    const [clusterPage, setClusterPage] = useState(0);
     const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
     const chartRef = useRef<HTMLDivElement>(null);
 
@@ -96,6 +97,8 @@ export default function AdminDashboard() {
     const trendData = CHANNEL_TRENDS[dateRange][channel];
     const stats = CHANNEL_STATS[channel];
     const clusters = CLUSTER_DATA[dateRange][channel];
+    // reset page when filter changes
+    const safeClusterPage = Math.min(clusterPage, Math.max(0, Math.ceil(clusters.length / 5) - 1));
     const insight = AI_INSIGHTS[dateRange][channel];
     const trends = STAT_TRENDS[dateRange][channel];
 
@@ -258,7 +261,26 @@ export default function AdminDashboard() {
                         transition={{ delay: 0.45 }}
                         className="p-4 rounded-[24px] bg-zinc-950 border border-white/5 flex flex-col h-full overflow-hidden"
                     >
-                        <h3 className="text-sm font-bold text-white mb-3">Issue Clusters</h3>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-bold text-white">Issue Clusters</h3>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-zinc-600 font-bold tabular-nums">{safeClusterPage + 1} / {Math.ceil(clusters.length / 5)}</span>
+                                <button
+                                    onClick={() => setClusterPage(p => Math.max(0, p - 1))}
+                                    disabled={safeClusterPage === 0}
+                                    className="p-1 rounded-lg border border-white/5 text-zinc-500 hover:text-white hover:border-white/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    <ChevronLeft className="w-3 h-3" />
+                                </button>
+                                <button
+                                    onClick={() => setClusterPage(p => Math.min(Math.ceil(clusters.length / 5) - 1, p + 1))}
+                                    disabled={safeClusterPage >= Math.ceil(clusters.length / 5) - 1}
+                                    className="p-1 rounded-lg border border-white/5 text-zinc-500 hover:text-white hover:border-white/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    <ChevronRight className="w-3 h-3" />
+                                </button>
+                            </div>
+                        </div>
                         {/* Column Headers */}
                         <div className="flex items-center justify-between px-2 pb-2 border-b border-white/5 mb-0.5">
                             <span className="text-[9px] uppercase tracking-[0.15em] font-black text-zinc-600 flex-1">Topic</span>
@@ -269,7 +291,7 @@ export default function AdminDashboard() {
                             </div>
                         </div>
                         <div className="flex-1 divide-y divide-white/[0.03]">
-                            {clusters.map((issue) => {
+                            {clusters.slice(safeClusterPage * 5, safeClusterPage * 5 + 5).map((issue) => {
                                 const meta = CLUSTER_META[issue.name] ?? { change: "+0%", up: true, spark: [10, 10, 10, 10, 10, 10, 10, 10] };
                                 const sparkData = meta.spark.map((v) => ({ v }));
                                 return (
