@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Contract — Overview Dashboard · Resolve AI</title>
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #09090b;
+      --surface:    #111113;
+      --surface-2:  #18181b;
+      --border:     rgba(255,255,255,0.06);
+      --border-2:   rgba(255,255,255,0.10);
+      --zinc-400:   #a1a1aa;
+      --zinc-500:   #71717a;
+      --zinc-600:   #52525b;
+      --zinc-700:   #3f3f46;
+      --white:      #ffffff;
+      --blue:       #3b82f6;
+      --blue-dim:   rgba(59,130,246,0.12);
+      --blue-border:rgba(59,130,246,0.20);
+      --emerald:    #10b981;
+      --emerald-dim:rgba(16,185,129,0.10);
+      --amber:      #f59e0b;
+      --amber-dim:  rgba(245,158,11,0.10);
+      --red:        #ef4444;
+      --red-dim:    rgba(239,68,68,0.10);
+      --purple:     #a855f7;
+      --purple-dim: rgba(168,85,247,0.10);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--zinc-400);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── Layout ───────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ─── Sidebar ──────────────────────────────────────────── */
+    .sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 28px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .sidebar-logo {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--blue-dim);
+      border: 1px solid var(--blue-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-dot svg { width: 14px; height: 14px; color: var(--blue); }
+
+    .logo-text {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: 0.04em;
+    }
+
+    .logo-sub {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--zinc-600);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .sidebar-section-label {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--zinc-600);
+      padding: 8px 20px 6px;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--zinc-500);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .sidebar-link:hover { color: var(--white); background: rgba(255,255,255,0.03); }
+    .sidebar-link.active { color: var(--blue); border-left-color: var(--blue); background: var(--blue-dim); }
+
+    .method-pill-sm {
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      padding: 1px 5px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .get-pill  { background: var(--emerald-dim); color: var(--emerald); }
+    .post-pill { background: var(--amber-dim);   color: var(--amber);   }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px 20px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .version-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--zinc-600);
+    }
+
+    .version-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 6px var(--emerald);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ─── Main Content ─────────────────────────────────────── */
+    .main {
+      flex: 1;
+      min-width: 0;
+      padding: 40px 48px;
+      max-width: 900px;
+    }
+
+    /* ─── Hero ─────────────────────────────────────────────── */
+    .hero {
+      margin-bottom: 40px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .hero-tag {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blue);
+      background: var(--blue-dim);
+      border: 1px solid var(--blue-border);
+      padding: 3px 8px;
+      border-radius: 99px;
+    }
+
+    .hero-route {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--zinc-600);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .hero h1 span { color: var(--blue); }
+
+    .hero-desc {
+      font-size: 13px;
+      color: var(--zinc-500);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+
+    /* ─── Meta Row ─────────────────────────────────────────── */
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .meta-chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 11px;
+    }
+
+    .meta-chip-label { color: var(--zinc-600); font-weight: 700; text-transform: uppercase; font-size: 9px; letter-spacing: 0.12em; }
+    .meta-chip-value { color: var(--white); font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace; }
+
+    /* ─── Endpoint Index Table ──────────────────────────────── */
+    .index-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+
+    .index-card-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .index-card-header h2 {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--zinc-500);
+    }
+
+    .index-table { width: 100%; border-collapse: collapse; }
+
+    .index-table th {
+      padding: 8px 20px;
+      text-align: left;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--zinc-600);
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .index-table td {
+      padding: 11px 20px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .index-table tr:last-child td { border-bottom: none; }
+
+    .index-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+    .index-link {
+      color: var(--zinc-400);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      transition: color 0.15s;
+    }
+
+    .index-link:hover { color: var(--blue); }
+
+    .params-list { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .param-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--zinc-500);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    /* ─── Query Params Card ─────────────────────────────────── */
+    .params-card {
+      background: var(--blue-dim);
+      border: 1px solid var(--blue-border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 40px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .params-card-label {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 10px;
+    }
+
+    .param-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .param-name {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--white);
+      width: 90px;
+      flex-shrink: 0;
+    }
+
+    .param-type {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--blue);
+      background: rgba(59,130,246,0.1);
+      padding: 1px 6px;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    .param-enum {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      color: var(--zinc-500);
+    }
+
+    .param-default {
+      font-size: 10px;
+      color: var(--zinc-600);
+      font-weight: 600;
+    }
+
+    /* ─── Endpoint Sections ─────────────────────────────────── */
+    .endpoint-section {
+      margin-bottom: 48px;
+      scroll-margin-top: 24px;
+    }
+
+    .endpoint-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .endpoint-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--zinc-500);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .endpoint-meta { flex: 1; }
+
+    .endpoint-method-path {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .method-pill {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      padding: 3px 10px;
+      border-radius: 7px;
+    }
+
+    .method-get  { background: var(--emerald-dim); color: var(--emerald); border: 1px solid rgba(16,185,129,0.2); }
+    .method-post { background: var(--amber-dim);   color: var(--amber);   border: 1px solid rgba(245,158,11,0.2); }
+
+    .endpoint-path {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .endpoint-powers {
+      font-size: 12px;
+      color: var(--zinc-500);
+      line-height: 1.6;
+    }
+
+    .endpoint-powers strong { color: var(--zinc-400); font-weight: 600; }
+
+    /* ─── Code Blocks ───────────────────────────────────────── */
+    .code-block-wrap {
+      margin: 14px 0;
+    }
+
+    .code-block-label {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--zinc-600);
+      margin-bottom: 6px;
+      padding-left: 2px;
+    }
+
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-block-dots { display: flex; gap: 5px; }
+    .code-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .code-dot:nth-child(1) { background: #ef4444; opacity: 0.6; }
+    .code-dot:nth-child(2) { background: #f59e0b; opacity: 0.6; }
+    .code-dot:nth-child(3) { background: #10b981; opacity: 0.6; }
+
+    .code-block-lang {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--zinc-600);
+    }
+
+    pre {
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--zinc-400);
+      white-space: pre;
+    }
+
+    /* JSON syntax highlight */
+    .k  { color: #93c5fd; }   /* key */
+    .s  { color: #86efac; }   /* string value */
+    .n  { color: #fbbf24; }   /* number */
+    .b  { color: #f472b6; }   /* boolean */
+    .nl { color: #94a3b8; }   /* null */
+    .p  { color: var(--zinc-600); }  /* punctuation */
+    .cm { color: var(--zinc-600); font-style: italic; } /* comment */
+
+    /* Python syntax highlight */
+    .py-kw   { color: #c084fc; }  /* keyword */
+    .py-fn   { color: #60a5fa; }  /* function name */
+    .py-cls  { color: #34d399; }  /* class */
+    .py-str  { color: #86efac; }  /* string */
+    .py-dec  { color: #fbbf24; }  /* decorator */
+    .py-cm   { color: var(--zinc-600); font-style: italic; }
+
+    /* ─── Field Notes Table ─────────────────────────────────── */
+    .field-table-wrap {
+      margin: 14px 0;
+    }
+
+    .field-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .field-table th {
+      padding: 7px 14px;
+      text-align: left;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--zinc-600);
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .field-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .field-table tr:last-child td { border-bottom: none; }
+    .field-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+    .field-name {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--white);
+      white-space: nowrap;
+    }
+
+    .field-type {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .ft-string  { color: var(--emerald); background: var(--emerald-dim); }
+    .ft-int     { color: var(--amber);   background: var(--amber-dim);   }
+    .ft-boolean { color: #c084fc;        background: var(--purple-dim);  }
+    .ft-array   { color: #60a5fa;        background: var(--blue-dim);    }
+
+    .field-note { font-size: 11px; color: var(--zinc-500); line-height: 1.55; }
+    .field-note code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 10.5px;
+      color: var(--zinc-400);
+      background: var(--surface-2);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    /* ─── Alert Box ─────────────────────────────────────────── */
+    .info-box {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin: 12px 0;
+      font-size: 11.5px;
+      line-height: 1.6;
+    }
+
+    .info-box.blue   { background: var(--blue-dim);    border: 1px solid var(--blue-border); color: #93c5fd; }
+    .info-box.amber  { background: var(--amber-dim);   border: 1px solid rgba(245,158,11,0.2); color: #fde68a; }
+    .info-box.emerald{ background: var(--emerald-dim); border: 1px solid rgba(16,185,129,0.2); color: #a7f3d0; }
+
+    .info-icon { flex-shrink: 0; margin-top: 1px; }
+
+    /* ─── Combination Grid ──────────────────────────────────── */
+    .combo-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin: 12px 0;
+    }
+
+    .combo-cell {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      text-align: center;
+    }
+
+    .combo-cell-header {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--zinc-600);
+      margin-bottom: 4px;
+    }
+
+    .combo-cell-val {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--white);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    /* ─── Error Section ─────────────────────────────────────── */
+    .error-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 40px;
+    }
+
+    .error-card {
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .error-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .error-400 .error-card-header { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); border-bottom: none; border-radius: 12px 12px 0 0; }
+    .error-500 .error-card-header { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(239,68,68,0.2);  border-bottom: none; border-radius: 12px 12px 0 0; }
+
+    .error-card pre {
+      font-size: 11px;
+      padding: 12px 14px;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .error-400 pre { background: rgba(245,158,11,0.04); border: 1px solid rgba(245,158,11,0.2); border-top: none; }
+    .error-500 pre { background: rgba(239,68,68,0.04);  border: 1px solid rgba(239,68,68,0.2);  border-top: none; }
+
+    /* ─── Divider ───────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 40px 0;
+    }
+
+    /* ─── Section Title ─────────────────────────────────────── */
+    .section-title {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--zinc-600);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── Scrollbar ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--zinc-700); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--zinc-600); }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-badge">
+        <div class="logo-dot">
+          <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="8" cy="8" r="2" fill="#3b82f6"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-text">Resolve AI</div>
+          <div class="logo-sub">API Contract</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section-label">Overview</div>
+    <a href="#intro"    class="sidebar-link active">Introduction</a>
+    <a href="#params"   class="sidebar-link">Shared Params</a>
+    <a href="#index"    class="sidebar-link">Endpoint Index</a>
+
+    <div class="sidebar-section-label" style="margin-top:10px;">Endpoints</div>
+    <a href="#ep-stats"    class="sidebar-link"><span class="method-pill-sm get-pill">GET</span>Stats</a>
+    <a href="#ep-insight"  class="sidebar-link"><span class="method-pill-sm get-pill">GET</span>AI Insight</a>
+    <a href="#ep-trends"   class="sidebar-link"><span class="method-pill-sm get-pill">GET</span>Channel Trends</a>
+    <a href="#ep-clusters" class="sidebar-link"><span class="method-pill-sm get-pill">GET</span>Issue Clusters</a>
+    <a href="#ep-ask"      class="sidebar-link"><span class="method-pill-sm post-pill">POST</span>Ask</a>
+
+    <div class="sidebar-section-label" style="margin-top:10px;">Reference</div>
+    <a href="#fields"  class="sidebar-link">Field Types</a>
+    <a href="#errors"  class="sidebar-link">Error Responses</a>
+    <a href="#skeleton" class="sidebar-link">FastAPI Skeleton</a>
+
+    <div class="sidebar-footer">
+      <div class="version-tag">
+        <span class="version-dot"></span>
+        v1.0 · Dashboard Screen
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ════════════════════════════════════════════════ -->
+  <main class="main">
+
+    <!-- Hero -->
+    <section class="hero" id="intro">
+      <div class="hero-eyebrow">
+        <span class="hero-tag">API Contract</span>
+        <span class="hero-route">/admin/dashboard</span>
+      </div>
+      <h1>Overview <span>Dashboard</span> Screen</h1>
+      <p class="hero-desc">
+        Complete backend API specification for the <strong style="color:var(--zinc-400)">Resolve AI</strong>
+        admin overview dashboard. Covers all 5 endpoints required to dynamically
+        render stat cards, AI insights, the trend chart, issue clusters, and the
+        follow-up question bar.
+      </p>
+      <div class="meta-row">
+        <div class="meta-chip">
+          <span class="meta-chip-label">Base URL</span>
+          <span class="meta-chip-value">/api/v1/admin</span>
+        </div>
+        <div class="meta-chip">
+          <span class="meta-chip-label">Content-Type</span>
+          <span class="meta-chip-value">application/json</span>
+        </div>
+        <div class="meta-chip">
+          <span class="meta-chip-label">Version</span>
+          <span class="meta-chip-value">1.0</span>
+        </div>
+        <div class="meta-chip">
+          <span class="meta-chip-label">Auth</span>
+          <span class="meta-chip-value">Bearer token</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Shared Params -->
+    <section id="params">
+      <div class="section-title">Shared Query Parameters</div>
+      <div class="params-card">
+        <div style="flex:1;min-width:200px;">
+          <div class="params-card-label">Common to all GET endpoints</div>
+          <div class="param-row">
+            <span class="param-name">date_range</span>
+            <span class="param-type">string</span>
+            <span class="param-enum">"24h" | "7d" | "30d"</span>
+          </div>
+          <div class="param-row" style="margin-left:100px;margin-top:-4px;">
+            <span class="param-default">default: "7d"</span>
+          </div>
+          <div class="param-row" style="margin-top:10px;">
+            <span class="param-name">channel</span>
+            <span class="param-type">string</span>
+            <span class="param-enum">"All" | "Chat" | "Call" | "Email"</span>
+          </div>
+          <div class="param-row" style="margin-left:100px;margin-top:-4px;">
+            <span class="param-default">default: "All"</span>
+          </div>
+        </div>
+        <div style="flex:1;min-width:180px;">
+          <div class="params-card-label">Total combinations</div>
+          <div class="combo-grid">
+            <div class="combo-cell">
+              <div class="combo-cell-header">Date</div>
+              <div class="combo-cell-val">3</div>
+            </div>
+            <div class="combo-cell">
+              <div class="combo-cell-header">×</div>
+              <div class="combo-cell-val" style="color:var(--zinc-600)">×</div>
+            </div>
+            <div class="combo-cell">
+              <div class="combo-cell-header">Channel</div>
+              <div class="combo-cell-val">4</div>
+            </div>
+            <div class="combo-cell" style="background:var(--blue-dim);border-color:var(--blue-border);">
+              <div class="combo-cell-header" style="color:var(--blue)">= Total</div>
+              <div class="combo-cell-val" style="color:var(--white)">12</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Index -->
+    <section id="index" style="margin-bottom:40px;">
+      <div class="section-title">Endpoint Index</div>
+      <div class="index-card">
+        <div class="index-card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5"><path d="M9 12h6M9 16h6M9 8h6M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+          <h2>All Endpoints — Dashboard Screen</h2>
+        </div>
+        <table class="index-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Powers</th>
+              <th>Params</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--zinc-600);font-weight:800;font-size:11px;">01</td>
+              <td><span class="method-pill method-get">GET</span></td>
+              <td><a href="#ep-stats" class="index-link">/overview/stats</a></td>
+              <td style="font-size:11px;color:var(--zinc-500);">5 metric cards + trend badges</td>
+              <td><div class="params-list"><span class="param-tag">date_range</span><span class="param-tag">channel</span></div></td>
+            </tr>
+            <tr>
+              <td style="color:var(--zinc-600);font-weight:800;font-size:11px;">02</td>
+              <td><span class="method-pill method-get">GET</span></td>
+              <td><a href="#ep-insight" class="index-link">/overview/ai-insight</a></td>
+              <td style="font-size:11px;color:var(--zinc-500);">AI insight paragraph</td>
+              <td><div class="params-list"><span class="param-tag">date_range</span><span class="param-tag">channel</span></div></td>
+            </tr>
+            <tr>
+              <td style="color:var(--zinc-600);font-weight:800;font-size:11px;">03</td>
+              <td><span class="method-pill method-get">GET</span></td>
+              <td><a href="#ep-trends" class="index-link">/overview/channel-trends</a></td>
+              <td style="font-size:11px;color:var(--zinc-500);">3-line trend chart data</td>
+              <td><div class="params-list"><span class="param-tag">date_range</span><span class="param-tag">channel</span></div></td>
+            </tr>
+            <tr>
+              <td style="color:var(--zinc-600);font-weight:800;font-size:11px;">04</td>
+              <td><span class="method-pill method-get">GET</span></td>
+              <td><a href="#ep-clusters" class="index-link">/overview/issue-clusters</a></td>
+              <td style="font-size:11px;color:var(--zinc-500);">Issue clusters panel + sparklines</td>
+              <td><div class="params-list"><span class="param-tag">date_range</span><span class="param-tag">channel</span></div></td>
+            </tr>
+            <tr>
+              <td style="color:var(--zinc-600);font-weight:800;font-size:11px;">05</td>
+              <td><span class="method-pill method-post">POST</span></td>
+              <td><a href="#ep-ask" class="index-link">/overview/ask</a></td>
+              <td style="font-size:11px;color:var(--zinc-500);">Follow-up AI question bar</td>
+              <td><div class="params-list"><span class="param-tag">body (JSON)</span></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ═══ EP 1 — STATS ════════════════════════════════════ -->
+    <section class="endpoint-section" id="ep-stats">
+      <div class="endpoint-header">
+        <div class="endpoint-number">01</div>
+        <div class="endpoint-meta">
+          <div class="endpoint-method-path">
+            <span class="method-pill method-get">GET</span>
+            <span class="endpoint-path">/api/v1/admin/overview/stats</span>
+          </div>
+          <div class="endpoint-powers">
+            Powers: <strong>5 top metric cards</strong> — Total Requests, Resolution Rate, Avg Handling Time, CSAT Score, Drop-Off Rate.
+            Each card shows a main value and a trend badge with delta and direction arrow.
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box blue">
+        <span class="info-icon">⚙</span>
+        Both <code>date_range</code> and <code>channel</code> affect this response — stats values change per channel, trend deltas change per date range × channel. All 12 combinations must be supported.
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-block-label">Response · Example: date_range=7d, channel=All</div>
+        <div class="code-block">
+          <div class="code-block-header">
+            <div class="code-block-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+            <span class="code-block-lang">JSON</span>
+          </div>
+          <pre>{
+  <span class="k">"date_range"</span>: <span class="s">"7d"</span>,
+  <span class="k">"channel"</span>:    <span class="s">"All"</span>,
+  <span class="k">"stats"</span>: {
+    <span class="k">"total_requests"</span>:    <span class="s">"28,431"</span>,    <span class="cm">// pre-formatted string</span>
+    <span class="k">"resolution_rate"</span>:   <span class="s">"83%"</span>,
+    <span class="k">"avg_handling_time"</span>: <span class="s">"2.3 min"</span>,
+    <span class="k">"csat_score"</span>:        <span class="s">"92%"</span>,
+    <span class="k">"drop_off_rate"</span>:     <span class="s">"11%"</span>
+  },
+  <span class="k">"trends"</span>: {
+    <span class="k">"total_requests"</span>:    { <span class="k">"delta"</span>: <span class="s">"+12.5%"</span>, <span class="k">"up"</span>: <span class="b">true</span>  },
+    <span class="k">"resolution_rate"</span>:   { <span class="k">"delta"</span>: <span class="s">"+4.2%"</span>,  <span class="k">"up"</span>: <span class="b">true</span>  },
+    <span class="k">"avg_handling_time"</span>: { <span class="k">"delta"</span>: <span class="s">"-0.4m"</span>,  <span class="k">"up"</span>: <span class="b">true</span>  }, <span class="cm">// lower = better</span>
+    <span class="k">"csat_score"</span>:        { <span class="k">"delta"</span>: <span class="s">"+2.1%"</span>,  <span class="k">"up"</span>: <span class="b">true</span>  },
+    <span class="k">"drop_off_rate"</span>:     { <span class="k">"delta"</span>: <span class="s">"+0.3%"</span>,  <span class="k">"up"</span>: <span class="b">false</span> }  <span class="cm">// higher drop-off = bad</span>
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="field-table-wrap">
+        <div class="code-block-label">Field Notes</div>
+        <table class="field-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="field-name">stats.*</span></td>
+              <td><span class="field-type ft-string">string</span></td>
+              <td class="field-note">Pre-formatted — render as-is. E.g. <code>"28,431"</code>, <code>"83%"</code>, <code>"2.3 min"</code></td>
+            </tr>
+            <tr>
+              <td><span class="field-name">trends.*.delta</span></td>
+              <td><span class="field-type ft-string">string</span></td>
+              <td class="field-note">Pre-formatted with sign and unit. E.g. <code>"+12.5%"</code>, <code>"-0.4m"</code></td>
+            </tr>
+            <tr>
+              <td><span class="field-name">trends.*.up</span></td>
+              <td><span class="field-type ft-boolean">boolean</span></td>
+              <td class="field-note"><code>true</code> → green ↗ badge. <code>false</code> → red ↘ badge. Note: for <code>avg_handling_time</code>, a negative delta is still <code>up: true</code> because lower time = better performance.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ EP 2 — AI INSIGHT ═══════════════════════════════ -->
+    <section class="endpoint-section" id="ep-insight">
+      <div class="endpoint-header">
+        <div class="endpoint-number">02</div>
+        <div class="endpoint-meta">
+          <div class="endpoint-method-path">
+            <span class="method-pill method-get">GET</span>
+            <span class="endpoint-path">/api/v1/admin/overview/ai-insight</span>
+          </div>
+          <div class="endpoint-powers">
+            Powers: the <strong>AI Insight card</strong> (blue-tinted panel with Sparkles icon) rendered below the filter row. Text is displayed with <code>line-clamp-2</code>.
+          </div>
+        </div>
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-block-label">Response · Example: date_range=7d, channel=All</div>
+        <div class="code-block">
+          <div class="code-block-header">
+            <div class="code-block-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+            <span class="code-block-lang">JSON</span>
+          </div>
+          <pre>{
+  <span class="k">"date_range"</span>: <span class="s">"7d"</span>,
+  <span class="k">"channel"</span>:    <span class="s">"All"</span>,
+  <span class="k">"insight"</span>:    <span class="s">"Support volume peaked on Friday at 7,200 interactions — a 24%
+               surge vs. last week. Payment failure clusters drove 62% of escalations.
+               AI resolution rate improved by 4.2 points to 83% after the SLM-v4.0
+               hot-patch deployed Wednesday."</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="info-box amber">
+        <span class="info-icon">⚠</span>
+        All 12 <code>date_range × channel</code> combinations must return a <strong>unique</strong> insight string. The frontend renders it verbatim — no HTML tags, no markdown.
+      </div>
+    </section>
+
+    <!-- ═══ EP 3 — CHANNEL TRENDS ════════════════════════════ -->
+    <section class="endpoint-section" id="ep-trends">
+      <div class="endpoint-header">
+        <div class="endpoint-number">03</div>
+        <div class="endpoint-meta">
+          <div class="endpoint-method-path">
+            <span class="method-pill method-get">GET</span>
+            <span class="endpoint-path">/api/v1/admin/overview/channel-trends</span>
+          </div>
+          <div class="endpoint-powers">
+            Powers: the <strong>"Customer Call Trends" 3-line Recharts chart</strong>.<br/>
+            Resolution % → blue solid line → right Y-axis (0–100%)<br/>
+            Volume → emerald dashed line → left Y-axis (raw count, formatted ≥1k as "Nk")<br/>
+            Escalation % → amber dashed line → right Y-axis (0–100%)
+          </div>
+        </div>
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-block-label">Response · Example: date_range=7d, channel=All</div>
+        <div class="code-block">
+          <div class="code-block-header">
+            <div class="code-block-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+            <span class="code-block-lang">JSON</span>
+          </div>
+          <pre>{
+  <span class="k">"date_range"</span>: <span class="s">"7d"</span>,
+  <span class="k">"channel"</span>:    <span class="s">"All"</span>,
+  <span class="k">"data"</span>: [
+    { <span class="k">"time"</span>: <span class="s">"Mon"</span>, <span class="k">"resolution"</span>: <span class="n">78</span>, <span class="k">"volume"</span>: <span class="n">5200</span>, <span class="k">"escalation"</span>: <span class="n">16</span> },
+    { <span class="k">"time"</span>: <span class="s">"Tue"</span>, <span class="k">"resolution"</span>: <span class="n">81</span>, <span class="k">"volume"</span>: <span class="n">4900</span>, <span class="k">"escalation"</span>: <span class="n">14</span> },
+    { <span class="k">"time"</span>: <span class="s">"Wed"</span>, <span class="k">"resolution"</span>: <span class="n">74</span>, <span class="k">"volume"</span>: <span class="n">6100</span>, <span class="k">"escalation"</span>: <span class="n">22</span> },
+    { <span class="k">"time"</span>: <span class="s">"Thu"</span>, <span class="k">"resolution"</span>: <span class="n">83</span>, <span class="k">"volume"</span>: <span class="n">5600</span>, <span class="k">"escalation"</span>: <span class="n">12</span> },
+    { <span class="k">"time"</span>: <span class="s">"Fri"</span>, <span class="k">"resolution"</span>: <span class="n">70</span>, <span class="k">"volume"</span>: <span class="n">7200</span>, <span class="k">"escalation"</span>: <span class="n">28</span> },
+    { <span class="k">"time"</span>: <span class="s">"Sat"</span>, <span class="k">"resolution"</span>: <span class="n">86</span>, <span class="k">"volume"</span>: <span class="n">4100</span>, <span class="k">"escalation"</span>: <span class="n">10</span> },
+    { <span class="k">"time"</span>: <span class="s">"Sun"</span>, <span class="k">"resolution"</span>: <span class="n">90</span>, <span class="k">"volume"</span>: <span class="n">3200</span>, <span class="k">"escalation"</span>: <span class="n">8</span>  }
+  ]
+}</pre>
+        </div>
+      </div>
+
+      <div class="field-table-wrap">
+        <div class="code-block-label">Field Notes</div>
+        <table class="field-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="field-name">time</span></td>
+              <td><span class="field-type ft-string">string</span></td>
+              <td class="field-note">
+                X-axis label.<br/>
+                <code>24h</code> → 8 points: <code>"00:00"</code> … <code>"22:00"</code><br/>
+                <code>7d</code> → 7 points: <code>"Mon"</code> … <code>"Sun"</code><br/>
+                <code>30d</code> → 4 points: <code>"Week 1"</code> … <code>"Week 4"</code>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="field-name">resolution</span></td>
+              <td><span class="field-type ft-int">int 0–100</span></td>
+              <td class="field-note">Percentage value. <strong>No % sign.</strong> Recharts right Y-axis (<code>yAxisId="pct"</code>).</td>
+            </tr>
+            <tr>
+              <td><span class="field-name">volume</span></td>
+              <td><span class="field-type ft-int">int</span></td>
+              <td class="field-note">Raw count. <strong>No formatting.</strong> Recharts formats ≥1000 as <code>Nk</code> on the left Y-axis (<code>yAxisId="vol"</code>).</td>
+            </tr>
+            <tr>
+              <td><span class="field-name">escalation</span></td>
+              <td><span class="field-type ft-int">int 0–100</span></td>
+              <td class="field-note">Percentage value. <strong>No % sign.</strong> Recharts right Y-axis (<code>yAxisId="pct"</code>).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ EP 4 — ISSUE CLUSTERS ════════════════════════════ -->
+    <section class="endpoint-section" id="ep-clusters">
+      <div class="endpoint-header">
+        <div class="endpoint-number">04</div>
+        <div class="endpoint-meta">
+          <div class="endpoint-method-path">
+            <span class="method-pill method-get">GET</span>
+            <span class="endpoint-path">/api/v1/admin/overview/issue-clusters</span>
+          </div>
+          <div class="endpoint-powers">
+            Powers: the <strong>Issue Clusters panel</strong> (right side of chart row). Each row shows: topic name · volume count · change % · 8-point micro sparkline. Frontend paginates client-side at 5 per page.
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box emerald">
+        <span class="info-icon">✓</span>
+        <strong>Do not paginate server-side.</strong> Return the full filtered list for the given <code>date_range × channel</code>. The frontend slices it.
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-block-label">Response · Example: date_range=7d, channel=All</div>
+        <div class="code-block">
+          <div class="code-block-header">
+            <div class="code-block-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+            <span class="code-block-lang">JSON</span>
+          </div>
+          <pre>{
+  <span class="k">"date_range"</span>: <span class="s">"7d"</span>,
+  <span class="k">"channel"</span>:    <span class="s">"All"</span>,
+  <span class="k">"clusters"</span>: [
+    {
+      <span class="k">"name"</span>:         <span class="s">"Payment Failed"</span>,
+      <span class="k">"count"</span>:        <span class="n">8432</span>,              <span class="cm">// raw int — FE calls .toLocaleString()</span>
+      <span class="k">"healing_time"</span>: <span class="s">"2m"</span>,
+      <span class="k">"change"</span>:       <span class="s">"+19%"</span>,            <span class="cm">// pre-formatted with sign</span>
+      <span class="k">"change_up"</span>:    <span class="b">true</span>,              <span class="cm">// true = emerald text, false = zinc</span>
+      <span class="k">"spark"</span>:        [<span class="n">38</span>, <span class="n">42</span>, <span class="n">40</span>, <span class="n">45</span>, <span class="n">50</span>, <span class="n">55</span>, <span class="n">58</span>, <span class="n">62</span>]   <span class="cm">// exactly 8 points</span>
+    },
+    {
+      <span class="k">"name"</span>:         <span class="s">"Order Not Created"</span>,
+      <span class="k">"count"</span>:        <span class="n">5231</span>,
+      <span class="k">"healing_time"</span>: <span class="s">"3m"</span>,
+      <span class="k">"change"</span>:       <span class="s">"-15%"</span>,
+      <span class="k">"change_up"</span>:    <span class="b">false</span>,
+      <span class="k">"spark"</span>:        [<span class="n">60</span>, <span class="n">56</span>, <span class="n">52</span>, <span class="n">50</span>, <span class="n">46</span>, <span class="n">44</span>, <span class="n">42</span>, <span class="n">40</span>]
+    },
+    {
+      <span class="k">"name"</span>:         <span class="s">"Refund Delay"</span>,
+      <span class="k">"count"</span>:        <span class="n">4120</span>,
+      <span class="k">"healing_time"</span>: <span class="s">"5m"</span>,
+      <span class="k">"change"</span>:       <span class="s">"+11%"</span>,
+      <span class="k">"change_up"</span>:    <span class="b">true</span>,
+      <span class="k">"spark"</span>:        [<span class="n">30</span>, <span class="n">31</span>, <span class="n">33</span>, <span class="n">32</span>, <span class="n">35</span>, <span class="n">36</span>, <span class="n">38</span>, <span class="n">40</span>]
+    },
+    {
+      <span class="k">"name"</span>:         <span class="s">"Card Declined"</span>,
+      <span class="k">"count"</span>:        <span class="n">3890</span>,
+      <span class="k">"healing_time"</span>: <span class="s">"2m"</span>,
+      <span class="k">"change"</span>:       <span class="s">"+22%"</span>,
+      <span class="k">"change_up"</span>:    <span class="b">true</span>,
+      <span class="k">"spark"</span>:        [<span class="n">28</span>, <span class="n">30</span>, <span class="n">32</span>, <span class="n">36</span>, <span class="n">38</span>, <span class="n">42</span>, <span class="n">46</span>, <span class="n">50</span>]
+    },
+    {
+      <span class="k">"name"</span>:         <span class="s">"OTP Not Received"</span>,
+      <span class="k">"count"</span>:        <span class="n">2100</span>,
+      <span class="k">"healing_time"</span>: <span class="s">"1m"</span>,
+      <span class="k">"change"</span>:       <span class="s">"+12%"</span>,
+      <span class="k">"change_up"</span>:    <span class="b">true</span>,
+      <span class="k">"spark"</span>:        [<span class="n">20</span>, <span class="n">21</span>, <span class="n">22</span>, <span class="n">22</span>, <span class="n">23</span>, <span class="n">24</span>, <span class="n">25</span>, <span class="n">26</span>]
+    },
+    {
+      <span class="k">"name"</span>:         <span class="s">"Delivery Tracking"</span>,
+      <span class="k">"count"</span>:        <span class="n">1800</span>,
+      <span class="k">"healing_time"</span>: <span class="s">"4m"</span>,
+      <span class="k">"change"</span>:       <span class="s">"+8%"</span>,
+      <span class="k">"change_up"</span>:    <span class="b">true</span>,
+      <span class="k">"spark"</span>:        [<span class="n">18</span>, <span class="n">19</span>, <span class="n">19</span>, <span class="n">20</span>, <span class="n">20</span>, <span class="n">21</span>, <span class="n">22</span>, <span class="n">22</span>]
+    }
+  ]
+}</pre>
+        </div>
+      </div>
+
+      <div class="field-table-wrap">
+        <div class="code-block-label">Field Notes</div>
+        <table class="field-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="field-name">count</span></td>
+              <td><span class="field-type ft-int">int</span></td>
+              <td class="field-note">Raw count. Frontend calls <code>.toLocaleString()</code> for display.</td>
+            </tr>
+            <tr>
+              <td><span class="field-name">healing_time</span></td>
+              <td><span class="field-type ft-string">string</span></td>
+              <td class="field-note">Human-readable avg resolution time. E.g. <code>"2m"</code>, <code>"5m"</code>, <code>"Unknown"</code>.</td>
+            </tr>
+            <tr>
+              <td><span class="field-name">change</span></td>
+              <td><span class="field-type ft-string">string</span></td>
+              <td class="field-note">Pre-formatted change vs prior period. Includes sign. E.g. <code>"+19%"</code>, <code>"-15%"</code>.</td>
+            </tr>
+            <tr>
+              <td><span class="field-name">change_up</span></td>
+              <td><span class="field-type ft-boolean">boolean</span></td>
+              <td class="field-note"><code>true</code> → emerald text color. <code>false</code> → zinc/gray text. Also controls sparkline stroke color.</td>
+            </tr>
+            <tr>
+              <td><span class="field-name">spark</span></td>
+              <td><span class="field-type ft-array">int[8]</span></td>
+              <td class="field-note">Exactly <strong>8</strong> sequential data points for the micro sparkline <code>LineChart</code>. Stroke: emerald if <code>change_up=true</code>, zinc if <code>false</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ EP 5 — ASK ══════════════════════════════════════ -->
+    <section class="endpoint-section" id="ep-ask">
+      <div class="endpoint-header">
+        <div class="endpoint-number">05</div>
+        <div class="endpoint-meta">
+          <div class="endpoint-method-path">
+            <span class="method-pill method-post">POST</span>
+            <span class="endpoint-path">/api/v1/admin/overview/ask</span>
+          </div>
+          <div class="endpoint-powers">
+            Powers: the <strong>follow-up AI question input bar</strong> at the bottom of the screen. The "Ask" button is disabled when the input is empty.
+          </div>
+        </div>
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-block-label">Request Body</div>
+        <div class="code-block">
+          <div class="code-block-header">
+            <div class="code-block-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+            <span class="code-block-lang">JSON</span>
+          </div>
+          <pre>{
+  <span class="k">"question"</span>:   <span class="s">"Why did escalations spike on Friday?"</span>,  <span class="cm">// required</span>
+  <span class="k">"date_range"</span>: <span class="s">"7d"</span>,                                    <span class="cm">// active filter at submit time</span>
+  <span class="k">"channel"</span>:    <span class="s">"All"</span>                                     <span class="cm">// active channel filter</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-block-label">Response</div>
+        <div class="code-block">
+          <div class="code-block-header">
+            <div class="code-block-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+            <span class="code-block-lang">JSON</span>
+          </div>
+          <pre>{
+  <span class="k">"answer"</span>: <span class="s">"Friday escalations reached 28% primarily due to a payment gateway
+             degradation between 14:00–19:00 affecting Card Declined and Payment Failed
+             clusters. Volume surged 24% above weekly average."</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="info-box blue">
+        <span class="info-icon">ℹ</span>
+        The <code>date_range</code> and <code>channel</code> context must be used by the AI backend to scope the answer to the correct data window. The <code>answer</code> string is rendered verbatim in the UI.
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ═══ FIELD TYPE REFERENCE ════════════════════════════ -->
+    <section id="fields" style="margin-bottom:40px;">
+      <div class="section-title">Field Type Reference</div>
+      <table class="field-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><span class="field-name">total_requests</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note">Pre-formatted with comma separator. E.g. <code>"28,431"</code></td></tr>
+          <tr><td><span class="field-name">resolution_rate</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note">Includes % sign. E.g. <code>"83%"</code></td></tr>
+          <tr><td><span class="field-name">avg_handling_time</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note">Human-readable. E.g. <code>"2.3 min"</code></td></tr>
+          <tr><td><span class="field-name">csat_score</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note">Includes % sign. E.g. <code>"92%"</code></td></tr>
+          <tr><td><span class="field-name">drop_off_rate</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note">Includes % sign. E.g. <code>"11%"</code></td></tr>
+          <tr><td><span class="field-name">trends.*.delta</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note">Includes sign + unit. E.g. <code>"+12.5%"</code>, <code>"-0.4m"</code></td></tr>
+          <tr><td><span class="field-name">trends.*.up</span></td><td><span class="field-type ft-boolean">boolean</span></td><td class="field-note"><code>true</code> = green ↗ · <code>false</code> = red ↘</td></tr>
+          <tr><td><span class="field-name">insight</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note">Plain text paragraph. No HTML or markdown.</td></tr>
+          <tr><td><span class="field-name">resolution (chart)</span></td><td><span class="field-type ft-int">int 0–100</span></td><td class="field-note">Percentage. <strong>No % sign</strong> — Recharts right Y-axis.</td></tr>
+          <tr><td><span class="field-name">volume (chart)</span></td><td><span class="field-type ft-int">int</span></td><td class="field-note">Raw count. <strong>No formatting</strong> — Recharts left Y-axis.</td></tr>
+          <tr><td><span class="field-name">escalation (chart)</span></td><td><span class="field-type ft-int">int 0–100</span></td><td class="field-note">Percentage. <strong>No % sign</strong> — Recharts right Y-axis.</td></tr>
+          <tr><td><span class="field-name">count (cluster)</span></td><td><span class="field-type ft-int">int</span></td><td class="field-note">Raw count. Frontend calls <code>.toLocaleString()</code>.</td></tr>
+          <tr><td><span class="field-name">healing_time</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note"><code>"2m"</code>, <code>"5m"</code>, <code>"Unknown"</code></td></tr>
+          <tr><td><span class="field-name">change</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note">Pre-formatted with sign. E.g. <code>"+19%"</code>, <code>"-15%"</code></td></tr>
+          <tr><td><span class="field-name">change_up</span></td><td><span class="field-type ft-boolean">boolean</span></td><td class="field-note"><code>true</code> = emerald · <code>false</code> = zinc/gray</td></tr>
+          <tr><td><span class="field-name">spark</span></td><td><span class="field-type ft-array">int[8]</span></td><td class="field-note">Exactly 8 data points for the micro sparkline.</td></tr>
+          <tr><td><span class="field-name">answer</span></td><td><span class="field-type ft-string">string</span></td><td class="field-note">AI-generated response text. Rendered verbatim.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═══ ERROR RESPONSES ══════════════════════════════════ -->
+    <section id="errors" style="margin-bottom:40px;">
+      <div class="section-title">Error Responses</div>
+      <div class="error-grid">
+        <div class="error-card error-400">
+          <div class="error-card-header">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+            400 Bad Request
+          </div>
+          <pre>{
+  <span class="k">"error"</span>:   <span class="s">"invalid_param"</span>,
+  <span class="k">"message"</span>: <span class="s">"date_range must be
+             one of: 24h, 7d, 30d"</span>
+}</pre>
+        </div>
+        <div class="error-card error-500">
+          <div class="error-card-header">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            500 Internal Server Error
+          </div>
+          <pre>{
+  <span class="k">"error"</span>:   <span class="s">"internal_error"</span>,
+  <span class="k">"message"</span>: <span class="s">"An unexpected
+             error occurred"</span>
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FASTAPI SKELETON ═════════════════════════════════ -->
+    <section id="skeleton" style="margin-bottom:60px;">
+      <div class="section-title">Python FastAPI Skeleton</div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+          <span class="code-block-lang">Python · FastAPI</span>
+        </div>
+        <pre><span class="py-kw">from</span> fastapi <span class="py-kw">import</span> FastAPI
+<span class="py-kw">from</span> typing  <span class="py-kw">import</span> Literal
+<span class="py-kw">from</span> pydantic <span class="py-kw">import</span> BaseModel
+
+app = <span class="py-fn">FastAPI</span>()
+
+DateRange = <span class="py-cls">Literal</span>[<span class="py-str">"24h"</span>, <span class="py-str">"7d"</span>, <span class="py-str">"30d"</span>]
+Channel   = <span class="py-cls">Literal</span>[<span class="py-str">"All"</span>, <span class="py-str">"Chat"</span>, <span class="py-str">"Call"</span>, <span class="py-str">"Email"</span>]
+
+<span class="py-dec">@app.get</span>(<span class="py-str">"/api/v1/admin/overview/stats"</span>)
+<span class="py-kw">def</span> <span class="py-fn">get_stats</span>(
+    date_range: DateRange = <span class="py-str">"7d"</span>,
+    channel:    Channel   = <span class="py-str">"All"</span>
+):
+    <span class="py-cm">"""Returns stat values + trend deltas for all 5 metric cards."""</span>
+    ...
+
+<span class="py-dec">@app.get</span>(<span class="py-str">"/api/v1/admin/overview/ai-insight"</span>)
+<span class="py-kw">def</span> <span class="py-fn">get_ai_insight</span>(
+    date_range: DateRange = <span class="py-str">"7d"</span>,
+    channel:    Channel   = <span class="py-str">"All"</span>
+):
+    <span class="py-cm">"""Returns AI-generated insight paragraph for the given filter."""</span>
+    ...
+
+<span class="py-dec">@app.get</span>(<span class="py-str">"/api/v1/admin/overview/channel-trends"</span>)
+<span class="py-kw">def</span> <span class="py-fn">get_channel_trends</span>(
+    date_range: DateRange = <span class="py-str">"7d"</span>,
+    channel:    Channel   = <span class="py-str">"All"</span>
+):
+    <span class="py-cm">"""Returns time-series data for the 3-line Recharts chart."""</span>
+    ...
+
+<span class="py-dec">@app.get</span>(<span class="py-str">"/api/v1/admin/overview/issue-clusters"</span>)
+<span class="py-kw">def</span> <span class="py-fn">get_issue_clusters</span>(
+    date_range: DateRange = <span class="py-str">"7d"</span>,
+    channel:    Channel   = <span class="py-str">"All"</span>
+):
+    <span class="py-cm">"""Returns full cluster list with count, change, and spark data."""</span>
+    ...
+
+<span class="py-kw">class</span> <span class="py-cls">AskRequest</span>(BaseModel):
+    question:   str
+    date_range: DateRange = <span class="py-str">"7d"</span>
+    channel:    Channel   = <span class="py-str">"All"</span>
+
+<span class="py-dec">@app.post</span>(<span class="py-str">"/api/v1/admin/overview/ask"</span>)
+<span class="py-kw">def</span> <span class="py-fn">ask_question</span>(body: <span class="py-cls">AskRequest</span>):
+    <span class="py-cm">"""Handles the follow-up AI question from the input bar."""</span>
+    ...</pre>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

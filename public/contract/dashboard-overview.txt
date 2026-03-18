@@ -1,0 +1,302 @@
+Backend API Contract — Overview Dashboard Screen
+Route: /admin/dashboard
+Base URL: /api/v1/admin
+All responses: Content-Type: application/json
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ENDPOINTS AT A GLANCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Method  Endpoint                               Params
+──────  ─────────────────────────────────────  ───────────────────────
+GET     /overview/stats                        date_range, channel
+GET     /overview/ai-insight                   date_range, channel
+GET     /overview/channel-trends               date_range, channel
+GET     /overview/issue-clusters               date_range, channel
+POST    /overview/ask                          body (JSON)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SHARED QUERY PARAMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+date_range  string   enum: "24h" | "7d" | "30d"    default: "7d"
+channel     string   enum: "All" | "Chat" | "Call" | "Email"   default: "All"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. GET /api/v1/admin/overview/stats
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Powers: the 5 top metric cards (Total Requests, Resolution Rate,
+        Avg Handling Time, CSAT Score, Drop-Off Rate)
+        Each card shows a main value + a trend badge (delta + direction).
+
+Query params: date_range, channel
+
+Response:
+{
+  "date_range": "7d",
+  "channel": "All",
+  "stats": {
+    "total_requests":    "28,431",
+    "resolution_rate":   "83%",
+    "avg_handling_time": "2.3 min",
+    "csat_score":        "92%",
+    "drop_off_rate":     "11%"
+  },
+  "trends": {
+    "total_requests":    { "delta": "+12.5%", "up": true  },
+    "resolution_rate":   { "delta": "+4.2%",  "up": true  },
+    "avg_handling_time": { "delta": "-0.4m",  "up": true  },
+    "csat_score":        { "delta": "+2.1%",  "up": true  },
+    "drop_off_rate":     { "delta": "+0.3%",  "up": false }
+  }
+}
+
+Field notes:
+  stats.*          string   Pre-formatted for display as-is
+  trends.*.delta   string   Pre-formatted string including sign and unit
+  trends.*.up      boolean  true = good trend (green ↗), false = bad trend (red ↘)
+                            NOTE: for avg_handling_time, a decrease (delta "-0.4m")
+                            is still "up: true" because lower time = better
+
+All combinations to support:
+  date_range × channel = 3 × 4 = 12 combinations
+  (24h|7d|30d) × (All|Chat|Call|Email)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. GET /api/v1/admin/overview/ai-insight
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Powers: the AI Insight card (blue tint, Sparkles icon) below the filter row.
+
+Query params: date_range, channel
+
+Response:
+{
+  "date_range": "7d",
+  "channel": "All",
+  "insight": "Support volume peaked on Friday at 7,200 interactions — a 24% surge vs. last week. Payment failure clusters drove 62% of escalations. AI resolution rate improved by 4.2 points to 83% after the SLM-v4.0 hot-patch deployed Wednesday. Recommend reviewing refund delay flows where drop-off remains elevated at 41%."
+}
+
+Field notes:
+  insight   string   Plain text, 1–4 sentences. Frontend renders as-is.
+                     Displayed with line-clamp-2 (truncated if too long).
+  All 12 date_range × channel combinations must return a unique insight.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. GET /api/v1/admin/overview/channel-trends
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Powers: the "Customer Call Trends" 3-line chart (Resolution, Volume, Escalation).
+        - Resolution %  → blue solid line     → right Y-axis (0–100%)
+        - Volume        → emerald dashed line → left Y-axis (counts, formatted as Nk)
+        - Escalation %  → amber dashed line   → right Y-axis (0–100%)
+
+Query params: date_range, channel
+
+Response:
+{
+  "date_range": "7d",
+  "channel": "All",
+  "data": [
+    { "time": "Mon", "resolution": 78, "volume": 5200, "escalation": 16 },
+    { "time": "Tue", "resolution": 81, "volume": 4900, "escalation": 14 },
+    { "time": "Wed", "resolution": 74, "volume": 6100, "escalation": 22 },
+    { "time": "Thu", "resolution": 83, "volume": 5600, "escalation": 12 },
+    { "time": "Fri", "resolution": 70, "volume": 7200, "escalation": 28 },
+    { "time": "Sat", "resolution": 86, "volume": 4100, "escalation": 10 },
+    { "time": "Sun", "resolution": 90, "volume": 3200, "escalation": 8  }
+  ]
+}
+
+Field notes:
+  time        string   Label for X-axis tick
+                       • "24h" range → "00:00", "04:00", "08:00", "12:00",
+                                        "16:00", "18:00", "20:00", "22:00"  (8 points)
+                       • "7d"  range → "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"  (7 points)
+                       • "30d" range → "Week 1", "Week 2", "Week 3", "Week 4"  (4 points)
+  resolution  int      Percentage value 0–100. No % symbol. Right Y-axis.
+  volume      int      Raw count. Frontend formats ≥1000 as "Nk". Left Y-axis.
+  escalation  int      Percentage value 0–100. No % symbol. Right Y-axis.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. GET /api/v1/admin/overview/issue-clusters
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Powers: the "Issue Clusters" panel (right side, paginated 5 per page).
+        Each row shows: topic name | volume count | change % | 8-point sparkline.
+
+Query params: date_range, channel
+
+Response:
+{
+  "date_range": "7d",
+  "channel": "All",
+  "clusters": [
+    {
+      "name":        "Payment Failed",
+      "count":       8432,
+      "healing_time":"2m",
+      "change":      "+19%",
+      "change_up":   true,
+      "spark":       [38, 42, 40, 45, 50, 55, 58, 62]
+    },
+    {
+      "name":        "Order Not Created",
+      "count":       5231,
+      "healing_time":"3m",
+      "change":      "-15%",
+      "change_up":   false,
+      "spark":       [60, 56, 52, 50, 46, 44, 42, 40]
+    },
+    {
+      "name":        "Refund Delay",
+      "count":       4120,
+      "healing_time":"5m",
+      "change":      "+11%",
+      "change_up":   true,
+      "spark":       [30, 31, 33, 32, 35, 36, 38, 40]
+    },
+    {
+      "name":        "Card Declined",
+      "count":       3890,
+      "healing_time":"2m",
+      "change":      "+22%",
+      "change_up":   true,
+      "spark":       [28, 30, 32, 36, 38, 42, 46, 50]
+    },
+    {
+      "name":        "OTP Not Received",
+      "count":       2100,
+      "healing_time":"1m",
+      "change":      "+12%",
+      "change_up":   true,
+      "spark":       [20, 21, 22, 22, 23, 24, 25, 26]
+    },
+    {
+      "name":        "Delivery Tracking",
+      "count":       1800,
+      "healing_time":"4m",
+      "change":      "+8%",
+      "change_up":   true,
+      "spark":       [18, 19, 19, 20, 20, 21, 22, 22]
+    }
+  ]
+}
+
+Field notes:
+  count          int       Raw volume count. Frontend calls .toLocaleString().
+  healing_time   string    Human-readable avg resolution time. e.g. "2m", "Unknown".
+  change         string    Pre-formatted change vs prior period. Includes sign and %.
+  change_up      boolean   true = volume increasing (emerald text), false = decreasing (zinc text).
+  spark          int[8]    8 sequential data points for the micro-sparkline LineChart.
+                           Sparkline stroke: emerald if change_up=true, zinc if change_up=false.
+
+  The list is filtered by date_range × channel.
+  Frontend paginates the array client-side (5 per page).
+  Return all matching clusters — do not paginate server-side.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. POST /api/v1/admin/overview/ask
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Powers: the follow-up AI question input bar at the bottom of the screen.
+        The "Ask" button is disabled when the text input is empty.
+
+Request body:
+{
+  "question":   "Why did escalations spike on Friday?",
+  "date_range": "7d",
+  "channel":    "All"
+}
+
+Response:
+{
+  "answer": "Friday escalations reached 28% primarily due to a payment gateway degradation between 14:00–19:00 affecting Card Declined and Payment Failed clusters. Volume surged 24% above weekly average."
+}
+
+Field notes:
+  question    string   Required. Free-form user question.
+  date_range  string   Required. The active filter when the user submitted.
+  channel     string   Required. The active channel filter.
+  answer      string   AI-generated response. Displayed directly in the UI.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FIELD TYPE REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Field                   Type        Notes
+──────────────────────  ──────────  ────────────────────────────────────────────
+total_requests          string      Pre-formatted with comma separator "28,431"
+resolution_rate         string      Includes % sign "83%"
+avg_handling_time       string      Human-readable "2.3 min"
+csat_score              string      Includes % sign "92%"
+drop_off_rate           string      Includes % sign "11%"
+trends.*.delta          string      Includes sign and unit "+12.5%", "-0.4m"
+trends.*.up             boolean     true = green ↗, false = red ↘
+insight                 string      Plain text paragraph, no HTML
+resolution (chart)      int 0–100   Percentage, NO % sign (Recharts domain)
+volume (chart)          int         Raw count, NO formatting (Recharts handles it)
+escalation (chart)      int 0–100   Percentage, NO % sign (Recharts domain)
+count (cluster)         int         Raw count, NO formatting (frontend formats)
+healing_time            string      "2m", "5m", "Unknown"
+change                  string      "+19%", "-15%" — pre-formatted with sign
+change_up               boolean     true = green, false = zinc/gray
+spark                   int[8]      Exactly 8 data points for sparkline
+answer                  string      AI text, plain string
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ERROR RESPONSES (all endpoints)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+400 Bad Request — invalid enum value for date_range or channel
+{
+  "error": "invalid_param",
+  "message": "date_range must be one of: 24h, 7d, 30d"
+}
+
+500 Internal Server Error
+{
+  "error": "internal_error",
+  "message": "An unexpected error occurred"
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Python FastAPI skeleton — Dashboard Screen
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+from fastapi import FastAPI, Query
+from typing import Literal
+from pydantic import BaseModel
+
+app = FastAPI()
+
+DateRange = Literal["24h", "7d", "30d"]
+Channel   = Literal["All", "Chat", "Call", "Email"]
+
+@app.get("/api/v1/admin/overview/stats")
+def get_stats(
+    date_range: DateRange = "7d",
+    channel: Channel = "All"
+):
+    ...
+
+@app.get("/api/v1/admin/overview/ai-insight")
+def get_ai_insight(
+    date_range: DateRange = "7d",
+    channel: Channel = "All"
+):
+    ...
+
+@app.get("/api/v1/admin/overview/channel-trends")
+def get_channel_trends(
+    date_range: DateRange = "7d",
+    channel: Channel = "All"
+):
+    ...
+
+@app.get("/api/v1/admin/overview/issue-clusters")
+def get_issue_clusters(
+    date_range: DateRange = "7d",
+    channel: Channel = "All"
+):
+    ...
+
+class AskRequest(BaseModel):
+    question:   str
+    date_range: DateRange = "7d"
+    channel:    Channel   = "All"
+
+@app.post("/api/v1/admin/overview/ask")
+def ask_question(body: AskRequest):
+    ...
