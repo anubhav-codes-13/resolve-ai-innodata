@@ -7,9 +7,15 @@ import { BadgeCheck, OctagonAlert, TrendingUp, Search, CheckCircle2, XCircle } f
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
+const DATE_RANGES = ["24h", "7d", "30d"] as const;
+const DATE_LABELS: Record<string, string> = { "24h": "24 Hours", "7d": "7 Days", "30d": "30 Days" };
+const CHANNELS = ["All", "Chat", "Call", "Email"];
+
 export default function IssueInsights() {
     const [searchQuery, setSearchQuery] = useState("");
     const [category, setCategory] = useState("All");
+    const [dateRange, setDateRange] = useState<"24h" | "7d" | "30d">("7d");
+    const [channel, setChannel] = useState("All");
 
     const filteredIssues = INSIGHTS_TOPICS.filter((issue) => {
         const matchesSearch = issue.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -20,6 +26,47 @@ export default function IssueInsights() {
     return (
         <AdminLayout>
             <div className="space-y-6 md:space-y-8 max-w-7xl mx-auto pb-12">
+                {/* Date Range + Channel Filters */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.03 }}
+                    className="flex flex-wrap items-center justify-between gap-2"
+                >
+                    <div className="flex gap-1.5">
+                        {DATE_RANGES.map((d) => (
+                            <button
+                                key={d}
+                                onClick={() => setDateRange(d)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all",
+                                    dateRange === d
+                                        ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                                        : "bg-zinc-900 text-zinc-500 border-white/5 hover:text-white hover:border-white/10"
+                                )}
+                            >
+                                {DATE_LABELS[d]}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex gap-1.5">
+                        {CHANNELS.map((c) => (
+                            <button
+                                key={c}
+                                onClick={() => setChannel(c)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all",
+                                    channel === c
+                                        ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                                        : "bg-zinc-900 text-zinc-500 border-white/5 hover:text-white hover:border-white/10"
+                                )}
+                            >
+                                {c}
+                            </button>
+                        ))}
+                    </div>
+                </motion.div>
+
                 {/* Header */}
                 <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6">
                     <div className="space-y-1">
