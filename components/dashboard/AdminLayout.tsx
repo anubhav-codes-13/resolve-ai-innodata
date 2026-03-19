@@ -86,12 +86,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         </div>
                     </div>
                 </header>
-                <main className="flex-1 overflow-y-auto p-4 md:p-5 scrollbar-hide">
+                <main className="flex-1 overflow-hidden p-4 md:p-5 flex flex-col">
                     <motion.div
                         key={pathname}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="flex-1 min-h-0 flex flex-col"
                     >
                         {children}
                     </motion.div>

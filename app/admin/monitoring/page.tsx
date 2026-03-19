@@ -77,7 +77,7 @@ export default function MonitoringPage() {
 
     return (
         <AdminLayout>
-            <div className={cn("space-y-6 pb-10", loading && "opacity-50 pointer-events-none")}>
+            <div className={cn("space-y-6 pb-10 flex-1 overflow-y-auto scrollbar-hide", loading && "opacity-50 pointer-events-none")}>
                 {/* Filter Row — date range left, channels right */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}

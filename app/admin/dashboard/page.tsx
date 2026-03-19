@@ -136,7 +136,7 @@ export default function AdminDashboard() {
 
     return (
         <AdminLayout>
-            <div className={cn("space-y-3 max-w-7xl mx-auto", loading && "opacity-50 pointer-events-none")}>
+            <div className={cn("space-y-3 max-w-7xl mx-auto flex-1 overflow-y-auto scrollbar-hide", loading && "opacity-50 pointer-events-none")}>
 
                 {/* Filter Row */}
                 <motion.div
