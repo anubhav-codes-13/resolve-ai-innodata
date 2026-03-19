@@ -51,7 +51,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
 
                 <nav className="flex-1 space-y-1">
-                    <NavItem href="/admin/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Dashboard" active={pathname === "/admin/dashboard"} />
+                    <NavItem href="/admin/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Overview" active={pathname === "/admin/dashboard"} />
                     <NavItem href="/admin/monitoring" icon={<Monitor className="w-4 h-4" />} label="Monitoring" active={pathname === "/admin/monitoring"} />
                     <NavItem href="/admin/issues" icon={<MessageSquare className="w-4 h-4" />} label="Issue Insights" active={pathname === "/admin/issues"} />
                     {/* <NavItem href="/admin/analytics" icon={<PieChart className="w-4 h-4" />} label="Analytics" active={pathname === "/admin/analytics"} /> */}
@@ -72,7 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex-1 flex flex-col overflow-hidden">
                 <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-black">
                     <h2 className="text-sm font-semibold text-white">
-                        {pathname?.split("/").pop()?.toUpperCase() || "DASHBOARD"}
+                        {({ "/admin/dashboard": "OVERVIEW", "/admin/monitoring": "MONITORING", "/admin/issues": "ISSUE INSIGHTS" } as Record<string, string>)[pathname ?? ""] ?? pathname?.split("/").pop()?.toUpperCase() ?? "OVERVIEW"}
                     </h2>
                     <div className="flex items-center gap-4">
                         <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-white/10 rounded-lg text-[10px] text-zinc-500">

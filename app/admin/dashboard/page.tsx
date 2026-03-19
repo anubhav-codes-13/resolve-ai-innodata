@@ -32,12 +32,13 @@ export default function AdminDashboard() {
     const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
     const [data, setData] = useState<DashboardPayload | null>(null);
     const [loading, setLoading] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const chartRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setLoading(true);
         fetchDashboard(dateRange, channel)
-            .then((d) => setData(d))
+            .then((d) => { setData(d); setLastUpdated(new Date()); })
             .catch(() => setData(null))
             .finally(() => setLoading(false));
     }, [dateRange, channel]);
@@ -160,7 +161,12 @@ export default function AdminDashboard() {
                             </button>
                         ))}
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex items-center gap-2">
+                        {lastUpdated && (
+                            <span className="text-[10px] text-zinc-600 font-semibold tabular-nums mr-1">
+                                Updated {lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                            </span>
+                        )}
                         {(["All", "Chat", "Call", "Email"] as Channel[]).map((c) => (
                             <button
                                 key={c}
@@ -360,17 +366,17 @@ export default function AdminDashboard() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="p-1.5 rounded-2xl bg-zinc-950 border border-white/5 flex items-center gap-2 hover:border-white/10 transition-all focus-within:border-blue-500/30"
+                    className="p-1.5 rounded-2xl bg-zinc-900 border border-white/10 flex items-center gap-2 hover:border-white/20 transition-all focus-within:border-blue-500/40 shadow-lg"
                 >
-                    <div className="p-2 rounded-xl bg-zinc-900 border border-white/5 ml-2 shrink-0">
-                        <MessageSquare className="w-3.5 h-3.5 text-zinc-500" />
+                    <div className="p-2 rounded-xl bg-zinc-800 border border-white/10 ml-2 shrink-0">
+                        <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
                     </div>
                     <input
                         type="text"
                         value={followUpText}
                         onChange={(e) => setFollowUpText(e.target.value)}
                         placeholder="Ask a follow-up question about your support data..."
-                        className="flex-1 bg-transparent text-xs text-white placeholder:text-zinc-600 focus:outline-none py-2"
+                        className="flex-1 bg-transparent text-xs text-white placeholder:text-zinc-400 focus:outline-none py-2"
                     />
                     <button
                         disabled={!followUpText.trim()}

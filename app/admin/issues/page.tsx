@@ -19,12 +19,13 @@ export default function IssueInsights() {
     const [page, setPage] = useState(0);
     const [data, setData] = useState<DashboardPayload | null>(null);
     const [loading, setLoading] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const PAGE_SIZE = 5;
 
     useEffect(() => {
         setLoading(true);
         fetchDashboard(dateRange, channel as "All" | "Chat" | "Call" | "Email")
-            .then((d) => setData(d))
+            .then((d) => { setData(d); setLastUpdated(new Date()); })
             .catch(() => setData(null))
             .finally(() => setLoading(false));
     }, [dateRange, channel]);
@@ -84,7 +85,12 @@ export default function IssueInsights() {
                             </button>
                         ))}
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex items-center gap-2">
+                        {lastUpdated && (
+                            <span className="text-[10px] text-zinc-600 font-semibold tabular-nums mr-1">
+                                Updated {lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                            </span>
+                        )}
                         {CHANNELS.map((c) => (
                             <button
                                 key={c}
