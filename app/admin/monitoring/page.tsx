@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/dashboard/AdminLayout";
 import { ResponsiveContainer, LineChart, Line } from "recharts";
-import { TrendingUp, CheckCircle2, Activity, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { TrendingUp, CheckCircle2, Activity, ChevronDown, ChevronLeft, ChevronRight, Bot, Users, Clock, Cpu, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { fetchDashboard, DashboardPayload } from "@/lib/api";
@@ -77,7 +77,7 @@ export default function MonitoringPage() {
 
     return (
         <AdminLayout>
-            <div className={cn("space-y-6 pb-10 flex-1 overflow-y-auto scrollbar-hide", loading && "opacity-50 pointer-events-none")}>
+            <div className={cn("flex-1 min-h-0 flex flex-col gap-4", loading && "opacity-50 pointer-events-none")}>
                 {/* Filter Row — date range left, channels right */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -125,14 +125,14 @@ export default function MonitoringPage() {
                 </motion.div>
 
                 {/* Row 1: Trending | Performing | Metric Topics */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 items-stretch">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
 
                     {/* Top Trending Topics */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                        className="p-6 md:p-8 rounded-[32px] bg-zinc-950 border border-white/5 flex flex-col gap-5"
+                        className="p-5 rounded-[32px] bg-zinc-950 border border-white/5 flex flex-col gap-4"
                     >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/10">
                                     <TrendingUp className="w-4 h-4 text-amber-500" />
@@ -183,9 +183,9 @@ export default function MonitoringPage() {
                     {/* Top Performing Topics */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                        className="p-6 md:p-8 rounded-[32px] bg-zinc-950 border border-white/5 flex flex-col gap-5"
+                        className="p-5 rounded-[32px] bg-zinc-950 border border-white/5 flex flex-col gap-4"
                     >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/10">
                                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -231,9 +231,9 @@ export default function MonitoringPage() {
                     {/* Top Topics by selected Category */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                        className="p-6 md:p-8 rounded-[32px] bg-zinc-950 border border-white/5 flex flex-col gap-4"
+                        className="p-5 rounded-[32px] bg-zinc-950 border border-white/5 flex flex-col gap-4"
                     >
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-2 shrink-0">
                             <div className="flex items-center gap-3 min-w-0">
                                 <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/10 shrink-0">
                                     <Activity className="w-4 h-4 text-blue-500" />
@@ -332,7 +332,33 @@ export default function MonitoringPage() {
                     </motion.div>
                 </div>
 
+                {/* KPI Stats Row */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                    className="grid grid-cols-2 md:grid-cols-5 gap-3 shrink-0"
+                >
+                    {[
+                        { icon: <Bot className="w-4 h-4" />, iconBg: "bg-blue-500/10 border-blue-500/10 text-blue-400", value: "47,832", label: "AI Resolved", sub: "Issues fully resolved by AI this period." },
+                        { icon: <Users className="w-4 h-4" />, iconBg: "bg-zinc-800 border-white/5 text-zinc-400", value: "6,120", label: "Human Handled", sub: "Escalated to a live agent this period." },
+                        { icon: <Clock className="w-4 h-4" />, iconBg: "bg-emerald-500/10 border-emerald-500/10 text-emerald-400", value: "14,230", label: "Human Hours Saved", sub: "Equivalent to 88 full-time agents this month." },
+                        { icon: <Target className="w-4 h-4" />, iconBg: "bg-purple-500/10 border-purple-500/10 text-purple-400", value: "99.2%", label: "Model Precision", sub: "Issue classification accuracy across all categories." },
+                        { icon: <Cpu className="w-4 h-4" />, iconBg: "bg-amber-500/10 border-amber-500/10 text-amber-400", value: "34%", label: "Avg. CPU Utilization", sub: "Edge inference cost efficiency monitoring." },
+                    ].map((stat) => (
+                        <div key={stat.label} className="p-4 rounded-2xl bg-zinc-950 border border-white/5 flex items-center gap-3">
+                            <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center border shrink-0", stat.iconBg)}>
+                                {stat.icon}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-base font-black text-white tabular-nums leading-tight">{stat.value}</p>
+                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest truncate">{stat.label}</p>
+                                <p className="text-[10px] text-zinc-600 leading-snug mt-0.5 line-clamp-1">{stat.sub}</p>
+                            </div>
+                        </div>
+                    ))}
+                </motion.div>
+
             </div>
         </AdminLayout>
+
     );
 }
