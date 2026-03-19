@@ -302,20 +302,20 @@ export default function MonitoringPage() {
                                 <div>
                                     <div className="flex items-center px-2 pb-2 border-b border-white/5">
                                         <span className="flex-1 min-w-0 text-[9px] uppercase tracking-[0.15em] font-black text-zinc-700">Topic</span>
-                                        <span className="w-10 text-right text-[9px] uppercase tracking-[0.12em] font-black text-zinc-700 shrink-0">Vol</span>
-                                        <span className="w-10 text-center text-[9px] uppercase tracking-[0.12em] font-black text-zinc-700 shrink-0">{colLabel}</span>
-                                        <span className="w-12 text-center text-[9px] uppercase tracking-[0.12em] font-black text-zinc-700 shrink-0">Trend</span>
+                                        <span className="w-12 text-right text-[9px] uppercase tracking-[0.12em] font-black text-zinc-700 shrink-0">Vol</span>
+                                        <span className="w-16 text-center text-[9px] uppercase tracking-[0.12em] font-black text-zinc-700 shrink-0">{colLabel}</span>
+                                        <span className="w-16 text-center text-[9px] uppercase tracking-[0.12em] font-black text-zinc-700 shrink-0">Trend</span>
                                     </div>
                                     {rows.map(row => {
                                         const sparkData = row.spark.map(v => ({ v }));
                                         return (
                                             <div key={row.name} className="flex items-center px-2 py-2.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group">
-                                                <span className="flex-1 min-w-0 text-xs font-bold truncate text-zinc-300 group-hover:text-white transition-colors pr-1">{row.name}</span>
-                                                <span className="w-10 text-right text-xs font-black tabular-nums text-emerald-400 shrink-0">
+                                                <span className="flex-1 min-w-0 text-xs font-bold truncate text-zinc-300 group-hover:text-white transition-colors pr-2">{row.name}</span>
+                                                <span className="w-12 text-right text-xs font-black tabular-nums text-emerald-400 shrink-0">
                                                     {row.volume >= 1000 ? `${(row.volume / 1000).toFixed(1)}k` : row.volume}
                                                 </span>
-                                                <span className={cn("w-10 text-center text-xs font-black tabular-nums shrink-0", metricColor)}>{row.value}</span>
-                                                <div className="w-12 h-8 shrink-0">
+                                                <span className={cn("w-16 text-center text-xs font-black tabular-nums shrink-0", metricColor)}>{row.value}</span>
+                                                <div className="w-16 h-8 shrink-0">
                                                     <ResponsiveContainer width="100%" height="100%">
                                                         <LineChart data={sparkData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
                                                             <Line type="monotone" dataKey="v" stroke={sparkColor} strokeWidth={1.5} dot={false} isAnimationActive={false} />
