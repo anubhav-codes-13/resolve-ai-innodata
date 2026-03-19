@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import AdminLayout from "@/components/dashboard/AdminLayout";
-import { CLUSTER_DATA, CHANNEL_TRENDS, CHANNEL_STATS, AI_INSIGHTS } from "@/lib/mockData";
+import { fetchDashboard, fmtAht, fmtTrend, trendUp, fmtChartLabel, DashboardPayload } from "@/lib/api";
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
 } from "recharts";
@@ -24,56 +24,95 @@ type HoverInfo = {
     escalation: number;
 } | null;
 
-type TrendSet = { requests: string; requestsUp: boolean; resolution: string; resolutionUp: boolean; aht: string; ahtUp: boolean; csat: string; csatUp: boolean; dropOff: string; dropOffUp: boolean };
-
-const STAT_TRENDS: Record<DateRange, Record<Channel, TrendSet>> = {
-    "24h": {
-        All:   { requests: "+3.1%", requestsUp: true,  resolution: "+1.2%", resolutionUp: true,  aht: "+0.1m", ahtUp: false, csat: "+0.4%", csatUp: true,  dropOff: "+0.8%", dropOffUp: false },
-        Chat:  { requests: "+4.2%", requestsUp: true,  resolution: "+2.1%", resolutionUp: true,  aht: "-0.1m", ahtUp: true,  csat: "+0.6%", csatUp: true,  dropOff: "-0.4%", dropOffUp: true  },
-        Call:  { requests: "+1.8%", requestsUp: true,  resolution: "-0.9%", resolutionUp: false, aht: "+0.3m", ahtUp: false, csat: "-0.2%", csatUp: false, dropOff: "+1.1%", dropOffUp: false },
-        Email: { requests: "+0.9%", requestsUp: true,  resolution: "-1.4%", resolutionUp: false, aht: "+0.5m", ahtUp: false, csat: "-0.3%", csatUp: false, dropOff: "+1.5%", dropOffUp: false },
-    },
-    "7d": {
-        All:   { requests: "+12.5%", requestsUp: true,  resolution: "+4.2%", resolutionUp: true,  aht: "-0.4m", ahtUp: true,  csat: "+2.1%", csatUp: true,  dropOff: "+0.3%", dropOffUp: false },
-        Chat:  { requests: "+15.3%", requestsUp: true,  resolution: "+6.1%", resolutionUp: true,  aht: "-0.6m", ahtUp: true,  csat: "+3.2%", csatUp: true,  dropOff: "-1.2%", dropOffUp: true  },
-        Call:  { requests: "+8.7%",  requestsUp: true,  resolution: "+1.4%", resolutionUp: true,  aht: "+0.2m", ahtUp: false, csat: "+0.8%", csatUp: true,  dropOff: "+1.9%", dropOffUp: false },
-        Email: { requests: "+5.2%",  requestsUp: true,  resolution: "-2.1%", resolutionUp: false, aht: "+0.8m", ahtUp: false, csat: "-1.1%", csatUp: false, dropOff: "+2.4%", dropOffUp: false },
-    },
-    "30d": {
-        All:   { requests: "+22.8%", requestsUp: true,  resolution: "+8.4%", resolutionUp: true,  aht: "-0.9m", ahtUp: true,  csat: "+4.6%", csatUp: true,  dropOff: "-2.1%", dropOffUp: true  },
-        Chat:  { requests: "+28.1%", requestsUp: true,  resolution: "+11.2%",resolutionUp: true,  aht: "-1.2m", ahtUp: true,  csat: "+5.8%", csatUp: true,  dropOff: "-3.4%", dropOffUp: true  },
-        Call:  { requests: "+14.3%", requestsUp: true,  resolution: "+3.8%", resolutionUp: true,  aht: "-0.3m", ahtUp: true,  csat: "+2.2%", csatUp: true,  dropOff: "+0.7%", dropOffUp: false },
-        Email: { requests: "+9.6%",  requestsUp: true,  resolution: "-0.9%", resolutionUp: false, aht: "+1.1m", ahtUp: false, csat: "-0.4%", csatUp: false, dropOff: "+3.8%", dropOffUp: false },
-    },
-};
-
-const CLUSTER_META: Record<string, { change: string; up: boolean; spark: number[] }> = {
-    "Payment Failed": { change: "+19%", up: true, spark: [38, 42, 40, 45, 50, 55, 58, 62] },
-    "Order Not Created": { change: "-15%", up: false, spark: [60, 56, 52, 50, 46, 44, 42, 40] },
-    "Refund Delay": { change: "+11%", up: true, spark: [30, 31, 33, 32, 35, 36, 38, 40] },
-    "Card Declined": { change: "+22%", up: true, spark: [28, 30, 32, 36, 38, 42, 46, 50] },
-    "OTP Not Received": { change: "+12%", up: true, spark: [20, 21, 22, 22, 23, 24, 25, 26] },
-    "Delivery Tracking": { change: "+8%", up: true, spark: [18, 19, 19, 20, 20, 21, 22, 22] },
-    "Checkout Error": { change: "+42%", up: true, spark: [12, 16, 20, 26, 32, 38, 44, 50] },
-    "Login Problem": { change: "-4%", up: false, spark: [22, 22, 21, 21, 20, 20, 19, 19] },
-    "App Crash": { change: "+31%", up: true, spark: [10, 12, 14, 16, 20, 24, 28, 32] },
-    "Coupon Error": { change: "+6%", up: true, spark: [14, 14, 15, 15, 15, 16, 16, 17] },
-};
-
 export default function AdminDashboard() {
     const [dateRange, setDateRange] = useState<DateRange>("7d");
     const [channel, setChannel] = useState<Channel>("All");
     const [followUpText, setFollowUpText] = useState("");
     const [clusterPage, setClusterPage] = useState(0);
     const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
+    const [data, setData] = useState<DashboardPayload | null>(null);
+    const [loading, setLoading] = useState(true);
     const chartRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setLoading(true);
+        fetchDashboard(dateRange, channel)
+            .then((d) => setData(d))
+            .catch(() => setData(null))
+            .finally(() => setLoading(false));
+    }, [dateRange, channel]);
+
+    const trendData = data
+        ? data.charts.trends.map((d) => ({
+            time: fmtChartLabel(d.date, dateRange),
+            resolution: d.resolution,
+            volume: d.volume,
+            escalation: d.escalation,
+        }))
+        : [];
+
+    const clusters = data
+        ? data.charts.clusters.map((c) => ({
+            name: c.topic,
+            count: c.vol,
+            change: c.chg !== null ? (c.chg >= 0 ? "+" : "") + c.chg.toFixed(0) + "%" : "—",
+            change_up: c.chg !== null ? c.chg >= 0 : true,
+            spark: c.trend_data,
+        }))
+        : [];
+
+    const insight = data?.ai_insight ?? "";
+
+    const kpis = data?.kpis;
+    const statCards = [
+        {
+            delay: 0.1,
+            label: "Total Requests",
+            value: kpis ? kpis.total_requests.value.toLocaleString() : "—",
+            trend: kpis ? fmtTrend(kpis.total_requests.trend) : undefined,
+            up: kpis ? trendUp("total_requests", kpis.total_requests.trend) : true,
+            icon: <Users className="w-3.5 h-3.5" />,
+        },
+        {
+            delay: 0.13,
+            label: "Resolution Rate",
+            value: kpis ? kpis.resolution_rate.value.toFixed(1) + "%" : "—",
+            trend: kpis ? fmtTrend(kpis.resolution_rate.trend) : undefined,
+            up: kpis ? trendUp("resolution_rate", kpis.resolution_rate.trend) : true,
+            icon: <Activity className="w-3.5 h-3.5" />,
+        },
+        {
+            delay: 0.16,
+            label: "Avg. Handling Time",
+            value: kpis ? fmtAht(kpis.aht.value) : "—",
+            trend: kpis ? fmtTrend(kpis.aht.trend) : undefined,
+            up: kpis ? trendUp("aht", kpis.aht.trend) : true,
+            icon: <Clock className="w-3.5 h-3.5" />,
+        },
+        {
+            delay: 0.19,
+            label: "CSAT Score",
+            value: kpis ? kpis.csat.value.toFixed(1) + "%" : "—",
+            trend: kpis ? fmtTrend(kpis.csat.trend) : undefined,
+            up: kpis ? trendUp("csat", kpis.csat.trend) : true,
+            icon: <Zap className="w-3.5 h-3.5" />,
+        },
+        {
+            delay: 0.22,
+            label: "Drop-Off Rate",
+            value: kpis ? kpis.drop_off.value.toFixed(1) + "%" : "—",
+            trend: kpis ? fmtTrend(kpis.drop_off.trend) : undefined,
+            up: kpis ? trendUp("drop_off", kpis.drop_off.trend) : true,
+            icon: <Activity className="w-3.5 h-3.5" />,
+        },
+    ];
+
+    const safeClusterPage = Math.min(clusterPage, Math.max(0, Math.ceil(clusters.length / 5) - 1));
 
     function handleChartMouseMove(e: React.MouseEvent<HTMLDivElement>) {
         if (!chartRef.current || !trendData.length) return;
         const rect = chartRef.current.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
-        // Plot area boundaries: left YAxis width=38, margin.left=-10 → plotLeft≈28
-        // right YAxis width=30, margin.right=44 → plotRight≈width-74
         const plotLeft = 28;
         const plotRight = rect.width - 74;
         if (mouseX < plotLeft || mouseX > plotRight) { setHoverInfo(null); return; }
@@ -94,17 +133,9 @@ export default function AdminDashboard() {
         });
     }
 
-    const trendData = CHANNEL_TRENDS[dateRange][channel];
-    const stats = CHANNEL_STATS[channel];
-    const clusters = CLUSTER_DATA[dateRange][channel];
-    // reset page when filter changes
-    const safeClusterPage = Math.min(clusterPage, Math.max(0, Math.ceil(clusters.length / 5) - 1));
-    const insight = AI_INSIGHTS[dateRange][channel];
-    const trends = STAT_TRENDS[dateRange][channel];
-
     return (
         <AdminLayout>
-            <div className="space-y-3 max-w-7xl mx-auto">
+            <div className={cn("space-y-3 max-w-7xl mx-auto", loading && "opacity-50 pointer-events-none")}>
 
                 {/* Filter Row */}
                 <motion.div
@@ -117,7 +148,7 @@ export default function AdminDashboard() {
                         {(["24h", "7d", "30d"] as DateRange[]).map((r) => (
                             <button
                                 key={r}
-                                onClick={() => setDateRange(r)}
+                                onClick={() => { setDateRange(r); setClusterPage(0); }}
                                 className={cn(
                                     "px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all",
                                     dateRange === r
@@ -133,7 +164,7 @@ export default function AdminDashboard() {
                         {(["All", "Chat", "Call", "Email"] as Channel[]).map((c) => (
                             <button
                                 key={c}
-                                onClick={() => setChannel(c)}
+                                onClick={() => { setChannel(c); setClusterPage(0); }}
                                 className={cn(
                                     "px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all",
                                     channel === c
@@ -159,17 +190,23 @@ export default function AdminDashboard() {
                     </div>
                     <div className="min-w-0">
                         <p className="text-[9px] uppercase tracking-[0.2em] font-black text-zinc-600 mb-0.5">AI Insight</p>
-                        <p className="text-xs text-zinc-400 leading-relaxed font-medium line-clamp-2">{insight}</p>
+                        <p className="text-xs text-zinc-400 leading-relaxed font-medium line-clamp-2">{insight || "Loading insight..."}</p>
                     </div>
                 </motion.div>
 
                 {/* Metric Cards */}
                 <div className="grid grid-cols-5 gap-3">
-                    <StatCard delay={0.1} label="Total Requests" value={stats.totalRequests} trend={trends.requests} up={trends.requestsUp} icon={<Users className="w-3.5 h-3.5" />} />
-                    <StatCard delay={0.13} label="Resolution Rate" value={stats.resolutionRate} trend={trends.resolution} up={trends.resolutionUp} icon={<Activity className="w-3.5 h-3.5" />} />
-                    <StatCard delay={0.16} label="Avg. Handling Time" value={stats.avgHealingTime} trend={trends.aht} up={trends.ahtUp} icon={<Clock className="w-3.5 h-3.5" />} />
-                    <StatCard delay={0.19} label="CSAT Score" value={stats.csatScore} trend={trends.csat} up={trends.csatUp} icon={<Zap className="w-3.5 h-3.5" />} />
-                    <StatCard delay={0.22} label="Drop-Off Rate" value={stats.dropOffRate} trend={trends.dropOff} up={trends.dropOffUp} icon={<Activity className="w-3.5 h-3.5" />} />
+                    {statCards.map((card) => (
+                        <StatCard
+                            key={card.label}
+                            delay={card.delay}
+                            label={card.label}
+                            value={card.value}
+                            trend={card.trend}
+                            up={card.up}
+                            icon={card.icon}
+                        />
+                    ))}
                 </div>
 
                 {/* Customer Call Trends + Issue Clusters */}
@@ -264,7 +301,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-sm font-bold text-white">Issue Clusters</h3>
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] text-zinc-600 font-bold tabular-nums">{safeClusterPage + 1} / {Math.ceil(clusters.length / 5)}</span>
+                                <span className="text-[10px] text-zinc-600 font-bold tabular-nums">{safeClusterPage + 1} / {Math.max(1, Math.ceil(clusters.length / 5))}</span>
                                 <button
                                     onClick={() => setClusterPage(p => Math.max(0, p - 1))}
                                     disabled={safeClusterPage === 0}
@@ -292,8 +329,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex-1 divide-y divide-white/[0.03]">
                             {clusters.slice(safeClusterPage * 5, safeClusterPage * 5 + 5).map((issue) => {
-                                const meta = CLUSTER_META[issue.name] ?? { change: "+0%", up: true, spark: [10, 10, 10, 10, 10, 10, 10, 10] };
-                                const sparkData = meta.spark.map((v) => ({ v }));
+                                const sparkData = issue.spark.map((v) => ({ v }));
                                 return (
                                     <div key={issue.name} className="flex items-center justify-between px-2 py-2.5 hover:bg-white/[0.03] transition-all group">
                                         <div className="flex-1 min-w-0">
@@ -301,13 +337,13 @@ export default function AdminDashboard() {
                                         </div>
                                         <div className="flex items-center gap-3 shrink-0">
                                             <p className="text-sm font-black text-emerald-400 tabular-nums w-12 text-right">{issue.count.toLocaleString()}</p>
-                                            <span className={`text-xs font-bold tabular-nums w-10 text-right ${meta.up ? "text-emerald-400" : "text-zinc-500"}`}>
-                                                {meta.change}
+                                            <span className={`text-xs font-bold tabular-nums w-10 text-right ${issue.change_up ? "text-emerald-400" : "text-zinc-500"}`}>
+                                                {issue.change}
                                             </span>
                                             <div className="w-16 h-8 shrink-0">
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <LineChart data={sparkData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-                                                        <Line type="monotone" dataKey="v" stroke={meta.up ? "#34d399" : "#71717a"} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                                                        <Line type="monotone" dataKey="v" stroke={issue.change_up ? "#34d399" : "#71717a"} strokeWidth={1.5} dot={false} isAnimationActive={false} />
                                                     </LineChart>
                                                 </ResponsiveContainer>
                                             </div>
